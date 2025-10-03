@@ -1,235 +1,313 @@
-<!-- Doc Configuration -->
+<!-- MarketWatch (fixed autosave + Save / Resave / Clean + Notion hook) -->
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MarketWatch</title>
   <style>
-    :root { --bg:#0b1220; --card:#0f1629; --fg:#e6edf3; --muted:#a8b3cf; }
+    :root { --bg:#0b1220; --card:#0f1629; --fg:#e6edf3; --muted:#a8b3cf; --ok:#3fb950; --warn:#d29922; }
     html,body{margin:0;background:transparent;color:transparent;font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
     .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
     header{margin-bottom:16px;font-weight:700;font-size:20px;letter-spacing:.2px}
     .card{background:transparent;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.25)}
     .card h2{margin:0;padding:12px 16px;font-size:16px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.06)}
-    .widget{height:460px;}          /* 👈 control widget height here */
-    .widget.news{ height:600px;}   /* News widget height and wid */
-    .widget.news{ width:100%; }
-    .widget.symbol{ height:20px;}  
-    /* Two columns: News (left) + Plan (right) */
-    .twocol{
-      display:grid;
-      grid-template-columns: 1fr 1fr;   /* tweak ratio if you want */
-      gap:16px;
-      align-items:start;
-    }
-    @media (max-width: 900px){
-      .twocol{ grid-template-columns: 1fr; } /* stack on mobile */
-    }
+    .widget{height:460px;}
+    .widget.news{height:600px;width:100%}
+    .widget.symbol{height:20px}
 
+    .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    @media (max-width:900px){ .twocol{grid-template-columns:1fr} }
     @media (max-width:640px){ .widget{height:380px} }
 
-    /* Notes card */
-    .note-card .grid{
-      display:grid; gap:12px;
-      grid-template-columns: repeat(2, minmax(0,1fr));
+    /* Notes UI */
+    .note-card .grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .note-card label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    .note-card input[type="text"], .note-card select, .note-card textarea{
+      width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;
+      background:#0f1629;color:var(--fg);border:1px solid #2a3557;outline:none
     }
-    .note-card label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px;}
-    .note-card input[type="text"],
-    .note-card select,
-    .note-card textarea{
-      width:100%; box-sizing:border-box;
-      padding:10px 12px; border-radius:10px;
-      background:#0f1629; color:var(--fg);
-      border:1px solid #2a3557; outline:none;
-    }
-    .note-card textarea{ min-height:120px; resize:vertical; }
-    .note-card .full{ grid-column:1 / -1; }
-    .note-card .row{ display:flex; gap:12px; align-items:center; }
-    .note-card .muted{ color:var(--muted); font-size:12px; }
-    .note-card .actions{ display:flex; gap:10px; }
+    .note-card textarea{min-height:120px;resize:vertical}
+    .note-card .full{grid-column:1 / -1}
+    .note-card .row{display:flex;gap:12px;align-items:center}
+    .note-card .muted{color:var(--muted);font-size:12px}
+    .note-card .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .note-card button{
-      background:#1b2746; color:#e6edf3; border:1px solid #31406a;
-      padding:8px 12px; border-radius:10px; cursor:pointer;
+      background:#1b2746;color:#e6edf3;border:1px solid #31406a;
+      padding:8px 12px;border-radius:10px;cursor:pointer
     }
-    .note-card button:hover{ background:#233158; }
-    @media (max-width:720px){
-      .note-card .grid{ grid-template-columns:1fr; }
-    }
-
+    .note-card button:hover{background:#233158}
+    .status{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #31406a}
+    .status.ok{color:var(--ok);border-color:rgba(63,185,80,.35)}
+    .status.warn{color:var(--warn);border-color:rgba(210,153,34,.35)}
+    .pill{font-size:11px;opacity:.75}
   </style>
 </head>
 
-<script>
-  // change this if you switch symbol (so each symbol keeps its own notes)
-  const NOTES_KEY = 'notes_XAUUSD';
+<body>
+  <div class="wrap">
 
-  const fields = ['projection','entry1','entry2','exit1','exit2','fundamental','notes'];
-
-  function loadNotes(){
-    try{
-      const saved = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
-      fields.forEach(id => { const el = document.getElementById(id); if(el && saved[id] != null) el.value = saved[id]; });
-    }catch(e){}
-  }
-  function saveNotes(){
-    const data = {};
-    fields.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
-    localStorage.setItem(NOTES_KEY, JSON.stringify(data));
-  }
-  function bindNotes(){
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if(el){ el.addEventListener('input', saveNotes); }
-    });
-    const clr = document.getElementById('clearNotes');
-    if(clr){
-      clr.addEventListener('click', () => {
-        fields.forEach(id => { const el = document.getElementById(id); if(el){ el.value=''; } });
-        saveNotes();
-      });
-    }
-  }
-  loadNotes(); bindNotes();
-</script>
-
-
-
-<!-- Body Characteristics -->
- <body>
-   <div class="wrap">
-
-  <!-- TradingView Widget BEGIN -->
-  <div class="card" style="margin-top:16px">
+    <!-- TradingView: symbol info -->
+    <div class="card" style="margin-top:16px">
       <div class="tradingview-widget-container">
         <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/symbols/OANDA-XAUUSD/" rel="noopener nofollow" target="_blank"><span class="blue-text">XAUUSD performance</span></a><span class="trademark"> by TradingView</span></div>
+        <div class="tradingview-widget-copyright">
+          <a href="https://www.tradingview.com/symbols/OANDA-XAUUSD/" rel="noopener nofollow" target="_blank">
+            <span class="blue-text">XAUUSD performance</span>
+          </a><span class="trademark"> by TradingView</span>
+        </div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
         {
-        "symbol": "OANDA:XAUUSD",
-        "colorTheme": "dark",
-        "isTransparent": true,
-        "locale": "en",
-        "width": "100%"
-      }
-        </script>
-      </div>
-      </div>
-      
-<!-- TradingView Widget END -->
-
-<!-- Layout-->
-<div class="layout">
-  <!-- LEFT: CHART -->
-  <div class="card">
-    <div class="widget">
-      <div class="tradingview-widget-container" style="height:100%">
-        <div id="tv-advanced" class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-        {
-            "autosize": true,
-            "theme": "dark",
-            "symbol": "OANDA:XAUUSD",
-            "interval": "D",
-            "style": "1",
-            "allow_symbol_change": false,
-            "hide_side_toolbar":false,
-            "withdateranges": true,
-            "backgroundColor": "#0F0F0F"
-        }
-        </script>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT: NOTES 
-  <aside class="card">
-    <h2 id="noteTitle">Notes</h2>
-    <div class="note-body">
-      <div class="row">
-        <span class="muted">    S&R 3.4 - 3.6 </span>
-    </div>
-  </aside>
-</div> -->
-<!-- News + Trade Plan side-by-side -->
-<div class="twocol" style="margin-top:16px">
-  <!-- NEWS (left) -->
-  <!-- News -->
-  <div class="card" style="margin-top:16px">
-    <div class="widget news">
-      <div class="tradingview-widget-container" style="height:500px">
-        <div class="tradingview-widget-container__widget" style="height:100%"></div>
-        <script src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-        {
-          "feedMode": "symbol",
           "symbol": "OANDA:XAUUSD",
           "colorTheme": "dark",
           "isTransparent": true,
-          "displayMode": "adaptive",
-          "width": "100%",
-          "height": "500",
-          "locale": "en"
+          "locale": "en",
+          "width": "100%"
         }
         </script>
       </div>
     </div>
-  </div>
 
-
-  <!-- TRADE PLAN (right) -->
-  <div class="card">
-    <h2>Trade Plan / Notes</h2>
-    <div class="note-card" style="padding:14px 16px">
-      <div class="grid">
-        <div class="full">
-          <label for="projection">Day projection</label>
-          <div class="row">
-            <select id="projection">
-              <option value="">— choose —</option>
-              <option value="bullish">Bullish</option>
-              <option value="bearish">Bearish</option>
-              <option value="sideways">Sideways</option>
-              <option value="be_bu_side">BE / BU / SIDE</option>
-            </select>
-            <span class="muted">directional bias</span>
+    <!-- Layout -->
+    <div class="layout">
+      <!-- LEFT: CHART -->
+      <div class="card">
+        <div class="widget">
+          <div class="tradingview-widget-container" style="height:100%">
+            <div id="tv-advanced" class="tradingview-widget-container__widget" style="height:100%"></div>
+            <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+            {
+              "autosize": true,
+              "theme": "dark",
+              "symbol": "OANDA:XAUUSD",
+              "interval": "D",
+              "style": "1",
+              "allow_symbol_change": false,
+              "hide_side_toolbar": false,
+              "withdateranges": true,
+              "backgroundColor": "#0F0F0F"
+            }
+            </script>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div>
-          <label for="entry1">Entry 1</label>
-          <input id="entry1" type="text" placeholder="price / condition">
+    <!-- NEWS + TRADE PLAN -->
+    <div class="twocol" style="margin-top:16px">
+      <!-- NEWS -->
+      <div class="card" style="margin-top:16px">
+        <div class="widget news">
+          <div class="tradingview-widget-container" style="height:500px">
+            <div class="tradingview-widget-container__widget" style="height:100%"></div>
+            <script src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+            {
+              "feedMode": "symbol",
+              "symbol": "OANDA:XAUUSD",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "displayMode": "adaptive",
+              "width": "100%",
+              "height": "500",
+              "locale": "en"
+            }
+            </script>
+          </div>
         </div>
-        <div>
-          <label for="entry2">Entry 2</label>
-          <input id="entry2" type="text" placeholder="price / condition">
-        </div>
-        <div>
-          <label for="exit1">Exit 1</label>
-          <input id="exit1" type="text" placeholder="target / stop">
-        </div>
-        <div>
-          <label for="exit2">Exit 2</label>
-          <input id="exit2" type="text" placeholder="target / stop">
-        </div>
+      </div>
 
-        <div class="full">
-          <label for="fundamental">Fundamental</label>
-          <textarea id="fundamental" placeholder="key data, catalyst, events"></textarea>
-        </div>
-        <div class="full">
-          <label for="notes">Notes</label>
-          <textarea id="notes" placeholder="plan details, risk, scenarios…"></textarea>
-        </div>
+      <!-- TRADE PLAN -->
+      <div class="card">
+        <h2>Trade Plan / Notes</h2>
+        <div class="note-card" style="padding:14px 16px">
+          <div class="grid">
+            <div class="full">
+              <label for="projection">Day projection</label>
+              <div class="row">
+                <select id="projection">
+                  <option value="">— choose —</option>
+                  <option value="bullish">Bullish</option>
+                  <option value="bearish">Bearish</option>
+                  <option value="sideways">Sideways</option>
+                  <option value="be_bu_side">BE / BU / SIDE</option>
+                </select>
+                <span class="muted">directional bias</span>
+              </div>
+            </div>
 
-        <div class="full actions">
-          <button id="clearNotes">Clear</button>
-          <span class="muted">Autosaves locally</span>
+            <div>
+              <label for="entry1">Entry 1</label>
+              <input id="entry1" type="text" placeholder="price / condition">
+            </div>
+            <div>
+              <label for="entry2">Entry 2</label>
+              <input id="entry2" type="text" placeholder="price / condition">
+            </div>
+            <div>
+              <label for="exit1">Exit 1</label>
+              <input id="exit1" type="text" placeholder="target / stop">
+            </div>
+            <div>
+              <label for="exit2">Exit 2</label>
+              <input id="exit2" type="text" placeholder="target / stop">
+            </div>
+
+            <div class="full">
+              <label for="fundamental">Fundamental</label>
+              <textarea id="fundamental" placeholder="key data, catalyst, events"></textarea>
+            </div>
+            <div class="full">
+              <label for="notes">Notes</label>
+              <textarea id="notes" placeholder="plan details, risk, scenarios…"></textarea>
+            </div>
+
+            <div class="full actions">
+              <button id="saveNotes">Save</button>
+              <button id="resaveNotes" title="Force-save current values">Re-save</button>
+              <button id="clearNotes" title="Clear fields & local storage">Clean</button>
+              <span id="status" class="status warn">Not saved</span>
+              <span id="timestamp" class="pill muted"></span>
+            </div>
+
+            <!-- Optional: send to Notion (fill your webhook/token endpoint below) -->
+            <div class="full actions">
+              <button id="sendNotion">Send to Notion (optional)</button>
+              <span class="muted">Configure <code>NOTION_ENDPOINT</code> in script.</span>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
+  <script>
+    // === Configuration ===
+    // Change this if you switch symbol so each symbol keeps its own notes
+    const NOTES_KEY = 'notes_XAUUSD';
+    // If you have a tiny serverless function that writes into Notion, put its URL here.
+    // Example backend expects JSON: { key, data, updatedAt }
+    const NOTION_ENDPOINT = ''; // e.g. 'https://your-cloud-function.example/send-to-notion'
+
+    const fields = ['projection','entry1','entry2','exit1','exit2','fundamental','notes'];
+    let saveTimer = null;
+
+    function $id(id){ return document.getElementById(id); }
+
+    function setStatus(text, ok=false){
+      const s = $id('status'); if(!s) return;
+      s.textContent = text;
+      s.classList.toggle('ok', !!ok);
+      s.classList.toggle('warn', !ok);
+    }
+
+    function stamp(){
+      const ts = new Date().toLocaleString();
+      const el = $id('timestamp');
+      if(el) el.textContent = ts ? `Last change: ${ts}` : '';
+      return ts;
+    }
+
+    function collectData(){
+      const data = {};
+      fields.forEach(id => { const el = $id(id); data[id] = el ? el.value : ''; });
+      data.updatedAt = new Date().toISOString();
+      return data;
+    }
+
+    function applyData(saved){
+      fields.forEach(id => { const el = $id(id); if(el && saved && saved[id] != null) el.value = saved[id]; });
+    }
+
+    function loadNotes(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
+        applyData(saved);
+        if(saved.updatedAt){
+          setStatus('Loaded', true);
+          const el = $id('timestamp'); if(el) el.textContent = `Last saved: ${new Date(saved.updatedAt).toLocaleString()}`;
+        }else{
+          setStatus('Ready', false);
+        }
+      }catch(e){
+        setStatus('Load error', false);
+        console.error('Load error', e);
+      }
+    }
+
+    function saveNotes(manual=false){
+      try{
+        const data = collectData();
+        localStorage.setItem(NOTES_KEY, JSON.stringify(data));
+        setStatus(manual ? 'Saved' : 'Autosaved', true);
+        stamp();
+      }catch(e){
+        setStatus('Save error', false);
+        console.error('Save error', e);
+      }
+    }
+
+    function scheduleAutosave(){
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveNotes(false), 500); // debounce 500ms
+    }
+
+    function clearNotes(){
+      fields.forEach(id => { const el = $id(id); if(el) el.value = ''; });
+      localStorage.removeItem(NOTES_KEY);
+      setStatus('Cleared', false);
+      const el = $id('timestamp'); if(el) el.textContent = '';
+    }
+
+    async function sendToNotion(){
+      if(!NOTION_ENDPOINT){
+        setStatus('Set NOTION_ENDPOINT first', false);
+        return;
+      }
+      try{
+        const payload = { key: NOTES_KEY, data: collectData(), updatedAt: new Date().toISOString() };
+        const res = await fetch(NOTION_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        setStatus('Sent to Notion', true);
+      }catch(e){
+        setStatus('Notion send failed', false);
+        console.error('Notion send failed', e);
+      }
+    }
+
+    function bindNotes(){
+      // autosave on any change with debounce
+      fields.forEach(id => { const el = $id(id); if(el) el.addEventListener('input', scheduleAutosave); });
+
+      // buttons
+      const btnSave = $id('saveNotes');
+      const btnResave = $id('resaveNotes');
+      const btnClear = $id('clearNotes');
+      const btnNotion = $id('sendNotion');
+
+      if(btnSave) btnSave.addEventListener('click', () => saveNotes(true));
+      if(btnResave) btnResave.addEventListener('click', () => saveNotes(true));
+      if(btnClear) btnClear.addEventListener('click', clearNotes);
+      if(btnNotion) btnNotion.addEventListener('click', sendToNotion);
+    }
+
+    // Wait for DOM before wiring up
+    document.addEventListener('DOMContentLoaded', () => {
+      loadNotes();
+      bindNotes();
+      stamp();
+    });
+  </script>
+</body>
+</html>
+
+
+
+    
+ 
 
 
 
@@ -241,6 +319,7 @@
 
     
  
+
 
 
 
