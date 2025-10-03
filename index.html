@@ -6,7 +6,7 @@
   <title>MarketWatch</title>
   <style>
     :root { --bg:#0b1220; --card:#0f1629; --fg:#e6edf3; --muted:#a8b3cf; --ok:#3fb950; --warn:#d29922; }
-    html,body{margin:0;#0b1220:transparent;color:transparent;font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
+    html,body{margin:0;background:#0b1220;color:transparent;font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
     .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
     header{margin-bottom:16px;font-weight:700;font-size:20px;letter-spacing:.2px}
     .card{background:transparent;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.25)}
@@ -121,7 +121,7 @@
         <div class="note-card" style="padding:14px 16px">
           <div class="grid">
             <div class="full">
-              <label for="projection">Day projection</label>
+              <label for="projection">Week projection</label>
               <div class="row">
                 <select id="projection">
                   <option value="">— choose —</option>
@@ -168,11 +168,6 @@
               <span id="timestamp" class="pill muted"></span>
             </div>
 
-            <!-- Optional: send to Notion (fill your webhook/token endpoint below) -->
-            <div class="full actions">
-              <button id="sendNotion">Send to Notion (optional)</button>
-              <span class="muted">Configure <code>NOTION_ENDPOINT</code> in script.</span>
-            </div>
 
           </div>
         </div>
@@ -308,6 +303,9 @@
 
     
  
+
+
+
 
 
 
