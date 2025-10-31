@@ -91,6 +91,8 @@
   </style>
 </head>
 
+
+  
 <body>
   <div class="wrap">
     <!-- TradingView: symbol info -->
@@ -587,7 +589,12 @@
     window.addEventListener('resize', draw);
   })();
   </script>
-
+  <script>
+    if (localStorage.getItem('forceDesktop') !== '1' &&
+        window.matchMedia('(max-width: 560px)').matches) {
+      location.href = './m/';  /* use ./m/ for project pages */
+    }
+  </script>
 
 </body>
 </html>
@@ -605,6 +612,7 @@
 
     
  
+
 
 
 
