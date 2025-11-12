@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>REMAJU — Mobile Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { --bg:#0f172a; --text:#e5e7eb; }
+  html,body{
+    margin:0; padding:0;
+    height:100%; width:100%;
+    background:var(--bg); color:var(--text);
+    overflow:hidden;
+  }
+  .wrapper{
+    position:relative;
+    width:100%;
+    height:100vh;
+    overflow:hidden;          /* hides footer */
+    background:#0b1220;
+  }
+  .wrapper iframe{
+    position:absolute;
+    left:0; bottom:-36px;     /* crop gray Power BI footer */
+    width:100%; height:calc(100% + 36px);
+    border:0;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <!-- Replace this with your Power BI signed-in embed link -->
+  <iframe
+    loading="lazy"
+    src="https://app.powerbi.com/view?r=eyJrIjoiMmU0MzI0YmMtOWJmOS00OTVkLWE5ODUtMWRkNjJhN2VkZWU5IiwidCI6IjhhNjJiMDNjLWZlMGItNGY5YS04Y2VkLWQwYjAxOGI5YmM3ZiIsImMiOjR9">
+  </iframe>
+</div>
+
+</body>
+</html>
