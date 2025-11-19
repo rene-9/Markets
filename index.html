@@ -207,7 +207,26 @@
 
       </div>
 
-      <!-- TRADE PLAN -->
+       
+      <!-- TradingView Widget ECO Calendar -->
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+        {
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "locale": "en",
+        "countryFilter": "us,eu,pe",
+        "importanceFilter": "0,1",
+        "height": 550
+      }
+        </script>
+      </div>
+      <!-- TradingView Widget END -->
+    </div>
+
+    <!-- TRADE PLAN -->
       <div class="card">
         <h2>Trade Plan / Notes</h2>
         <div class="note-card" style="padding:14px 16px">
@@ -264,7 +283,6 @@
           </div>
         </div>
       </div>
-    </div>
   </div>
 
     <script>
@@ -444,7 +462,7 @@
 
         /* New York has a muted base color, bright when active */
         .sw-bar.ny { background:#4da3ff66; }    /* muted blue when NOT active */
-        .sw-bar.ny.active { background:#4da3ff; } /* bright blue when active */
+        .sw-bar.ny.active { background:#124edb; } /* bright blue when active */
         .sw-row{display:flex;align-items:center;margin-top:8px}
         .sw-city{font-weight:700;color:#d9e2ff;white-space:nowrap}
         .sw-local{font-size:11px;color:#a9b3c9;margin-left:6px;font-weight:500}
@@ -606,12 +624,10 @@
 
 
 
-   
-
-
 
     
  
+
 
 
 
