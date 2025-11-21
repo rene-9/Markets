@@ -1,646 +1,106 @@
-<!-- MarketWatch (fixed autosave + Save / Resave / Clean + Notion hook) -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Timezone lib for the widget -->
-  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+<meta charset="UTF-8" />
+<title>REMAJU Auctions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; }
 
-  <title>MarketWatch</title>
-  <style>
-    :root { --bg:#0b1220; --card:#0f1629; --fg:#e6edf3; --muted:#a8b3cf; --ok:#3fb950; --warn:#d29922; }
-    html,body{margin:0;background:#0b1220;color:transparent;font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
-    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
-    header{margin-bottom:16px;font-weight:700;font-size:20px;letter-spacing:.2px}
-    .card{background:transparent;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-    .card h2{margin:0;padding:12px 16px;font-size:16px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.06)}
-    .widget{height:460px;}
-    .widget.news{height:600px;width:100%}
-    .widget.symbol{height:20px}
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-    .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
-    @media (max-width:900px){ .twocol{grid-template-columns:1fr} }
-    @media (max-width:640px){ .widget{height:380px} }
+  header {
+    width: 100%;
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #1f2937;
+  }
 
-    /* Notes UI */
-    .note-card .grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
-    .note-card label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    .note-card input[type="text"], .note-card select, .note-card textarea{
-      width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;
-      background:#0f1629;color:var(--fg);border:1px solid #2a3557;outline:none
-    }
-    .note-card textarea{min-height:120px;resize:vertical}
-    .note-card .full{grid-column:1 / -1}
-    .note-card .row{display:flex;gap:12px;align-items:center}
-    .note-card .muted{color:var(--muted);font-size:12px}
-    .note-card .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .note-card button{
-      background:#1b2746;color:#e6edf3;border:1px solid #31406a;
-      padding:8px 12px;border-radius:10px;cursor:pointer
-    }
-    .note-card button:hover{background:#233158}
-    .status{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #31406a}
-    .status.ok{color:var(--ok);border-color:rgba(63,185,80,.35)}
-    .status.warn{color:var(--warn);border-color:rgba(210,153,34,.35)}
-    .pill{font-size:11px;opacity:.75}
+  header img {
+    height: 30px;
+    width: auto;
+  }
 
-    /* Sidescroll bar gray */
-    /* ===== Softer, dark scrollbars (works on most browsers) ===== */
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: .3px;
+  }
 
-    /* Firefox */
-    * {
-    scrollbar-width: thin;                         /* thickness */
-    scrollbar-color: #2a3557 #0f1629;              /* thumb / track */
-    }
-
-    /* Chromium/WebKit (Chrome, Edge, Opera, Brave, etc.) */
-    ::-webkit-scrollbar         { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track   { background: #0f1629; }      /* track */
-    ::-webkit-scrollbar-thumb   {
-    background: #2a3557;                              /* thumb */
+  /* ---- Report container ---- */
+  .wrapper {
+    position: relative;
+    overflow: hidden;       /* hides footer */
+    width: 95%;
+    max-width: 1600px;
+    height: 88vh;           /* adjust to fit screen */
+    margin-top: 16px;
+    margin-bottom: 24px;
     border-radius: 10px;
-    border: 2px solid #0f1629;                        /* gap effect */
+    box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  }
+
+  .wrapper iframe {
+    position: absolute;
+    bottom: -35px;          /* hide gray Power BI footer */
+    left: 0;
+    width: 100%;
+    height: calc(100% + 35px);
+    border: none;
+    border-radius: 10px;
+    background: #0b1220;
+  }
+
+  @media (max-width: 768px) {
+    header {
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
     }
-    ::-webkit-scrollbar-thumb:hover { background: #3a4b78; }
-
-    /* Tighter control on inputs/textarea (optional) */
-    .note-card textarea::-webkit-scrollbar,
-    .note-card input::-webkit-scrollbar { width: 10px; }
-    .note-card textarea::-webkit-scrollbar-thumb,
-    .note-card input::-webkit-scrollbar-thumb {
-    background: #31406a;
-    border-color: #0f1629;
+    h1 {
+      font-size: 16px;
     }
-
-    /* Optional: reduce bright focus ring on inputs/buttons */
-    .note-card input:focus,
-    .note-card select:focus,
-    .note-card textarea:focus,
-    .note-card button:focus {
-    outline: 2px solid #2a3557;      /* subtle */
-    outline-offset: 2px;
-    box-shadow: none;
+    header img {
+      height: 24px;
     }
-
-    .grid-2 { display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start; }
-
-    .card .header{ padding:10px 12px; font:600 14px/1.2 system-ui; color:#cfd7ff; border-bottom: none; }
-    .card .body{ height:560px; }            /* explicit height so widgets render */
-    @media (max-width:1024px){ .grid-2{ grid-template-columns:1fr; } .card .body{ height:520px; } }
-
-  </style>
+  }
+</style>
 </head>
-
-
-  
 <body>
-  <div class="wrap">
-    <!-- TradingView: symbol info -->
-    <div class="card" style="margin-top:16px">
-      <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright">
-          <a href="https://www.tradingview.com/symbols/OANDA-XAUUSD/" rel="noopener nofollow" target="_blank">
-            <span class="blue-text"></span>
-          </a><span class="trademark"></span>
-        </div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-        {
-          "symbol": "OANDA:XAUUSD",
-          "colorTheme": "dark",
-          "isTransparent": true,
-          "locale": "en",
-          "width": "100%"
-        }
-        </script>
-      </div>
-    </div>
 
-    <div class="grid-2">
-
-      <!-- Left: World -->
-      <div class="card">
-        <div class="body">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget" style="height:100%"></div>
-            <div class="tradingview-widget-copyright">
-              <a href="https://www.tradingview.com/markets/" target="_blank" rel="noopener nofollow">
-                <span class="blue-text">World markets</span></a> 
-            </div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {
-              "colorTheme": "dark",
-              "dateRange": "12M",
-              "isTransparent": true,
-              "showChart": true,
-              "showSymbolLogo": true,
-              "locale": "en",
-              "tabs": [{
-                "title": "Gold set",
-                "symbols": [
-                  {"s":"OANDA:XAUUSD","d":"Gold"},
-                  {"s":"FOREXCOM:SPXUSD","d":"S&P 500"},
-                  {"s":"PYTH:US10Y","d":"US 10Y"},
-                  {"s":"CAPITALCOM:DXY","d":"DXY"},
-                  {"s":"BITSTAMP:BTCUSD","d":"Bitcoin"}
-                ]
-              }]
-            }
-            </script>
-          </div>
-        </div>
-      </div>
-
-
-      <!-- RIGHT: ADVANCED CHART -->
-      <div class="card">
-
-           <div id="pane-gold" class="tabpane" role="tabpanel" aria-labelledby="tab-gold">
-            <div class="tradingview-widget-container" style="height:100%">
-              <div class="tradingview-widget-container__widget" style="height:100%"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-              {
-                "autosize": true,
-                "theme": "dark",
-                "symbol": "OANDA:XAUUSD",
-                "interval": "W",
-                "style": "1",
-                "allow_symbol_change": true,
-                "withdateranges": true,
-                "backgroundColor": "#0F0F0F"
-                
-              }
-              </script>
-            </div>
-
-          </div>
-        
-      </div>
-
-
-    </div>
-
-
-  <div id="sessions-top" class="card" style="overflow:visible; margin-top:16px"></div>
-
-    <!-- NEWS + TRADE PLAN -->
-    <div class="twocol" style="margin-top:16px">
-      <!-- NEWS -->
-      <div class="card" style="margin-top:16px">
-        <div class="widget news">
-          <div class="tradingview-widget-container" style="height:500px">
-            <div class="tradingview-widget-container__widget" style="height:100%"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-            {
-              "feedMode": "symbol",
-              "symbol": "OANDA:XAUUSD",
-              "colorTheme": "dark",
-              "isTransparent": true,
-              "displayMode": "adaptive",
-              "width": "100%",
-              "height": "500",
-              "locale": "en"
-            }
-            </script>
-          </div>
-        </div>
-
-      </div>
-
-       
-      <!-- TradingView Widget ECO Calendar -->
-      <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
-        {
-        "colorTheme": "dark",
-        "isTransparent": true,
-        "locale": "en",
-        "countryFilter": "us,eu,pe",
-        "importanceFilter": "0,1",
-        "height": 550
-      }
-        </script>
-      </div>
-      <!-- TradingView Widget END -->
-
-    </div>
-
-<div id="sessions-top" class="card" style="overflow:visible; margin-top:16px"></div>
-
-      <!-- Gallery -->
-      <div id="notion-journal" class="card" style="margin-top:24px;">
-        
-        <iframe 
-          src="https://superior-kangaroo.super.site"
-          style="
-            width:100%;
-            height:550px;
-            border:none;
-            border-radius:12px;
-            background: #0f1629;
-            box-shadow:0 0 12px #0f1629;
-          "
-          allowfullscreen>
-        </iframe>
-      </div>
-
-<div id="sessions-top" class="card" style="overflow:visible; margin-top:16px"></div>      
-
-    <!-- TRADE PLAN -->
-      <div class="card">
-        <h2>Trade Plan / Notes</h2>
-        <div class="note-card" style="padding:14px 16px">
-          <div class="grid">
-            <div class="full">
-              <label for="projection">Week projection</label>
-              <div class="row">
-                <select id="projection">
-                  <option value="">— choose —</option>
-                  <option value="bullish">Bullish</option>
-                  <option value="bearish">Bearish</option>
-                  <option value="sideways">Sideways</option>
-                  <option value="be_bu_side">BE / BU / SIDE</option>
-                </select>
-                <span class="muted">directional bias</span>
-              </div>
-            </div>
-
-            <div>
-              <label for="entry1">Entry 1</label>
-              <input id="entry1" type="text" placeholder="price / condition">
-            </div>
-            <div>
-              <label for="entry2">Entry 2</label>
-              <input id="entry2" type="text" placeholder="price / condition">
-            </div>
-            <div>
-              <label for="exit1">Exit 1</label>
-              <input id="exit1" type="text" placeholder="target / stop">
-            </div>
-            <div>
-              <label for="exit2">Exit 2</label>
-              <input id="exit2" type="text" placeholder="target / stop">
-            </div>
-
-            <div class="full">
-              <label for="fundamental">Fundamental</label>
-              <textarea id="fundamental" placeholder="key data, catalyst, events"></textarea>
-            </div>
-            <div class="full">
-              <label for="notes">Notes</label>
-              <textarea id="notes" placeholder="plan details, risk, scenarios…"></textarea>
-            </div>
-
-            <div class="full actions">
-              <button id="saveNotes">Save</button>
-              <button id="resaveNotes" title="Force-save current values">Re-save</button>
-              <button id="clearNotes" title="Clear fields & local storage">Clean</button>
-              <span id="status" class="status warn">Not saved</span>
-              <span id="timestamp" class="pill muted"></span>
-            </div>
-
-
-          </div>
-        </div>
-      </div>
-
-
-
-  </div>
-
-    <script>
-      // === Configuration ===
-      // Change this if you switch symbol so each symbol keeps its own notes
-      const NOTES_KEY = 'notes_XAUUSD';
-      const HILITE_SCOPE = 'all'
-      // If you have a tiny serverless function that writes into Notion, put its URL here.
-      // Example backend expects JSON: { key, data, updatedAt }
-      const NOTION_ENDPOINT = ''; // e.g. 'https://your-cloud-function.example/send-to-notion'
-
-      const fields = ['projection','entry1','entry2','exit1','exit2','fundamental','notes'];
-      let saveTimer = null;
-
-      function $id(id){ return document.getElementById(id); }
-
-      function setStatus(text, ok=false){
-        const s = $id('status'); if(!s) return;
-        s.textContent = text;
-        s.classList.toggle('ok', !!ok);
-        s.classList.toggle('warn', !ok);
-      }
-
-      function stamp(){
-        const ts = new Date().toLocaleString();
-        const el = $id('timestamp');
-        if(el) el.textContent = ts ? `Last change: ${ts}` : '';
-        return ts;
-      }
-
-      function collectData(){
-        const data = {};
-        fields.forEach(id => { const el = $id(id); data[id] = el ? el.value : ''; });
-        data.updatedAt = new Date().toISOString();
-        return data;
-      }
-
-      function applyData(saved){
-        fields.forEach(id => { const el = $id(id); if(el && saved && saved[id] != null) el.value = saved[id]; });
-      }
-
-      function loadNotes(){
-        try{
-          const saved = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
-          applyData(saved);
-          if(saved.updatedAt){
-            setStatus('Loaded', true);
-            const el = $id('timestamp'); if(el) el.textContent = `Last saved: ${new Date(saved.updatedAt).toLocaleString()}`;
-          }else{
-            setStatus('Ready', false);
-          }
-        }catch(e){
-          setStatus('Load error', false);
-          console.error('Load error', e);
-        }
-      }
-
-      function saveNotes(manual=false){
-        try{
-          const data = collectData();
-          localStorage.setItem(NOTES_KEY, JSON.stringify(data));
-          setStatus(manual ? 'Saved' : 'Autosaved', true);
-          stamp();
-        }catch(e){
-          setStatus('Save error', false);
-          console.error('Save error', e);
-        }
-      }
-
-      function scheduleAutosave(){
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => saveNotes(false), 500); // debounce 500ms
-      }
-
-      function clearNotes(){
-        fields.forEach(id => { const el = $id(id); if(el) el.value = ''; });
-        localStorage.removeItem(NOTES_KEY);
-        setStatus('Cleared', false);
-        const el = $id('timestamp'); if(el) el.textContent = '';
-      }
-
-      async function sendToNotion(){
-        if(!NOTION_ENDPOINT){
-          setStatus('Set NOTION_ENDPOINT first', false);
-          return;
-        }
-        try{
-          const payload = { key: NOTES_KEY, data: collectData(), updatedAt: new Date().toISOString() };
-          const res = await fetch(NOTION_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type':'application/json' },
-            body: JSON.stringify(payload),
-          });
-          if(!res.ok) throw new Error(`HTTP ${res.status}`);
-          setStatus('Sent to Notion', true);
-        }catch(e){
-          setStatus('Notion send failed', false);
-          console.error('Notion send failed', e);
-        }
-      }
-
-      function bindNotes(){
-        // autosave on any change with debounce
-        fields.forEach(id => { const el = $id(id); if(el) el.addEventListener('input', scheduleAutosave); });
-
-        // buttons
-        const btnSave = $id('saveNotes');
-        const btnResave = $id('resaveNotes');
-        const btnClear = $id('clearNotes');
-        const btnNotion = $id('sendNotion');
-
-        if(btnSave) btnSave.addEventListener('click', () => saveNotes(true));
-        if(btnResave) btnResave.addEventListener('click', () => saveNotes(true));
-        if(btnClear) btnClear.addEventListener('click', clearNotes);
-        if(btnNotion) btnNotion.addEventListener('click', sendToNotion);
-      }
-
-      // Wait for DOM before wiring up
-      document.addEventListener('DOMContentLoaded', () => {
-        loadNotes();
-        bindNotes();
-        stamp();
-      });
-    </script>
-
-  <script>
-    (() => {
-    const { DateTime, Interval } = luxon;
-
-    // ---------- CONFIG ----------
-    const TARGET_ZONE = 'America/Lima';             // draw scale & bars in Lima time
-    const ANCHOR_ZONE = 'America/Lima';             // trading day anchor zone
-    const ANCHOR      = { hour: 16, minute: 0 };    // 4:00 PM
-    const TICK_EVERY  = 2;                          // hours between scale ticks
-
-    // Enter hours in **Lima** (TARGET_ZONE). Overnight is OK (close < open).
-    const SESSIONS = [
-      { city: 'Sydney',   zone: 'Australia/Sydney',  open: '17:00', close: '01:00', color: null },
-      { city: 'Tokyo',    zone: 'Asia/Tokyo',        open: '19:00', close: '03:30', color: null },
-      { city: 'London',   zone: 'Europe/London',     open: '02:00', close: '11:00', color: null },
-      { city: 'New York', zone: 'America/New_York',  open: '07:00', close: '16:00', color: null  }
-    ];
-
-    // ---------- MOUNT (auto-create if missing) ----------
-    let mount = document.getElementById('sessions-top');
-    if (!mount) {
-      const container = document.querySelector('.wrap, .rap') || document.body;
-      mount = document.createElement('div');
-      mount.id = 'sessions-top';
-      mount.style.margin = '16px 0 8px';
-      container.prepend(mount);
-    }
-
-    const shadow = mount.attachShadow({ mode: 'open' });
-    shadow.innerHTML = `
-      <style>
-        :host { display:block }
-        .sw-wrap{background:#0f1629;border-radius:10px;padding:10px 16px 20px;
-                box-shadow:0 2px 8px rgba(0,0,0,.25);color:#e6ecff;
-                font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-        .sw-title{font-weight:700;font-size:16px;margin-bottom:8px;letter-spacing:.2px}
-        .sw-grid{display:grid;grid-template-columns:200px 1fr;column-gap:12px}
-        .sw-scale{grid-column:2/3;position:relative;height:30px;display:flex;align-items:flex-end;
-                  border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px}
-        .sw-tick{position:absolute;bottom:0;height:16px}
-        .sw-tick::before{content:"";position:absolute;left:0;bottom:0;width:1px;height:8px;background:#8892a6;opacity:.4}
-        .sw-tick .sw-lab{position:absolute;bottom:10px;transform:translate(-50%,0);font-size:11px;color:#a9b3c9}
-        .sw-labels{grid-column:1/2; padding-top:36px}
-        .sw-plot{grid-column:2/3;position:relative;overflow:visible}
-
-        /* Smooth color change */
-
-        .sw-bar { transition: background-color .2s ease; }
-
-        /* Active state (for all sessions when HILITE_SCOPE = 'all') */
-        .sw-bar.active { background:#4da3ff; }  /* blue-ish highlight */
-
-        /* New York has a muted base color, bright when active */
-        .sw-bar.ny { background:#4da3ff66; }    /* muted blue when NOT active */
-        .sw-bar.ny.active { background:#124edb; } /* bright blue when active */
-        .sw-row{display:flex;align-items:center;margin-top:8px}
-        .sw-city{font-weight:700;color:#d9e2ff;white-space:nowrap}
-        .sw-local{font-size:11px;color:#a9b3c9;margin-left:6px;font-weight:500}
-        .sw-lane{position:relative;height:30px;background:rgba(255,255,255,.04);border-radius:8px;overflow:clip}
-        .sw-bar{position:absolute;top:3px;height:20px;border-radius:6px;background:#c6cedf;
-                box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .sw-bar.ny{background:#4da3ff}
-        .sw-now{position:absolute;top:0;bottom:0;width:2px;background:#4da3ff;box-shadow:0 0 0 2px rgba(77,163,255,.15)}
-        .sw-nowtag{position:absolute;top:0;transform:translate(8px,-10px);white-space:nowrap;
-                  background:rgba(77,163,255,.18);border:1px solid rgba(77,163,255,.55);
-                  color:#d7e8ff;font-size:11px;padding:2px 8px;border-radius:8px}
-        @media (max-width:560px){
-          .sw-grid{grid-template-columns:140px 1fr}
-          .sw-city{font-size:14px}
-          .sw-local{display:block;margin:2px 0 0 0}
-        }
-      </style>
-
-      <div class="sw-wrap">
-        <div class="sw-title"></div>
-        <div class="sw-grid">
-          <div class="sw-labels"></div>
-          <div class="sw-plot">
-            <div class="sw-scale"></div>
-            <div class="sw-rows"></div>
-            <div class="sw-now"></div>
-            <div class="sw-nowtag"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // ---------- Helpers ----------
-    const $       = sel => shadow.querySelector(sel);
-    const labelsEl= $('.sw-labels');
-    const rowsEl  = $('.sw-rows');
-    const scaleEl = $('.sw-scale');
-    const nowLine = $('.sw-now');
-    const nowTag  = $('.sw-nowtag');
-
-    const hm  = s => { const [H,M] = s.split(':').map(Number); return { hour: H, minute: M || 0 }; };
-    const pct = (d, a, b) => {
-      const total = b.toMillis() - a.toMillis();
-      const diff  = d.toMillis() - a.toMillis();
-      return Math.max(0, Math.min(1, diff / total));
-    };
-
-    function tradingWindow(){
-      const nowA       = DateTime.now().setZone(ANCHOR_ZONE);
-      const todayStart = nowA.set(ANCHOR);
-      const startA     = (nowA < todayStart) ? todayStart.minus({days:1}) : todayStart;
-      const endA       = startA.plus({days:1});
-      const start      = startA.setZone(TARGET_ZONE);
-      const end        = endA.setZone(TARGET_ZONE);
-      return { start, end, ivl: Interval.fromDateTimes(start, end) };
-    }
-
-    function draw(){
-      labelsEl.innerHTML = '';
-      rowsEl.innerHTML   = '';
-      scaleEl.innerHTML  = '';
-
-      const nowT = DateTime.now().setZone(TARGET_ZONE);
-      const { start: dayStart, end: dayEnd, ivl } = tradingWindow();
-
-      // Left labels + lanes (bars)
-      SESSIONS.forEach(s => {
-        // Left
-        const lab = document.createElement('div');
-        lab.className = 'sw-row';
-        const city = document.createElement('span');
-        city.className = 'sw-city';
-        city.textContent = s.city;
-        const local = document.createElement('span');
-        local.className = 'sw-local';
-        local.textContent = `${DateTime.now().setZone(s.zone).toFormat('h:mma').toLowerCase()} local`;
-        lab.appendChild(city); lab.appendChild(local);
-        labelsEl.appendChild(lab);
-
-        // Right
-        const lane = document.createElement('div');
-        lane.className = 'sw-lane';
-        rowsEl.appendChild(lane);
-
-        // Interpret hours **in Lima** and plot directly (handles overnight)
-        const o = hm(s.open), c = hm(s.close);
-        [-1,0,1].forEach(d => {
-          const base   = dayStart.startOf('day').plus({days:d}); // in TARGET_ZONE
-          let startT   = base.set(o);
-          let endT     = base.set(c);
-          if (endT <= startT) endT = endT.plus({days:1});
-
-          const seg = Interval.fromDateTimes(startT, endT).intersection(ivl);
-          if (seg && seg.isValid){
-            const b = document.createElement('div');
-            b.className = 'sw-bar' + (s.color ? ' ' + s.color : '');
-            const L = pct(seg.start, dayStart, dayEnd);
-            const R = pct(seg.end,   dayStart, dayEnd);
-            b.style.left  = (L * 100) + '%';
-            b.style.width = ((R - L) * 100) + '%';
-            b.title = `${s.city}: ${startT.toFormat('HH:mm')}–${endT.toFormat('HH:mm')} (${TARGET_ZONE})`;
-
-            // >>> NEW: mark active if now-line crosses this segment
-            const isActive = nowT >= seg.start && nowT < seg.end;
-            if (isActive) {
-            const isNY = s.zone === 'America/New_York';
-            if (HILITE_SCOPE === 'all' || (HILITE_SCOPE === 'ny-only' && isNY)) {
-                b.classList.add('active');
-            }
-            }
-
-            lane.appendChild(b);
-          }
-        });
-      });
-
-      // Scale (inside plot column)
-      for (let t = dayStart; t <= dayEnd; t = t.plus({hours:TICK_EVERY})) {
-        const x = pct(t, dayStart, dayEnd);
-        const tick = document.createElement('div');
-        tick.className = 'sw-tick';
-        tick.style.left = (x * 100) + '%';
-        const lab = document.createElement('div');
-        lab.className = 'sw-lab';
-        lab.textContent = t.toFormat('ha').toLowerCase();
-        tick.appendChild(lab);
-        scaleEl.appendChild(tick);
-      }
-
-      // Now line + tag
-      const x = pct(nowT, dayStart, dayEnd);
-      nowLine.style.left = (x * 100) + '%';
-      nowTag.style.left  = (x * 100) + '%';
-      nowTag.textContent = `${nowT.setLocale('en').toFormat('h:mma').toLowerCase()} Lima`;
-
-      // Light checks
-      console.assert(rowsEl.querySelectorAll('.sw-bar').length > 0, 'Bars rendered');
-    }
-
-    draw();
-    setInterval(draw, 30000);
-    window.addEventListener('resize', draw);
-  })();
-  </script>
-  <script>
-    if (localStorage.getItem('forceDesktop') !== '1' &&
-        window.matchMedia('(max-width: 560px)').matches) {
-      location.href = './m/';  /* use ./m/ for project pages */
-    }
-  </script>
+<header style="display:flex;align-items:center;justify-content:center;padding:8px 16px;position:relative;">
+  
+  <!-- Left-logo -->
+  <img src="logo.png" style="height:25px;position:absolute;left:50px;top:50%;transform:translateY(-50%);">
+
+  <!-- Center-title -->
+  <span style="font-size:20px;font-weight:600;color:white;">
+    REMAJU Auctions – Properties on Sale
+  </span>
+
+</header>
+
+<div class="wrapper">
+  <iframe 
+    loading="lazy"
+    src="https://app.powerbi.com/view?r=eyJrIjoiODkwZGIzNmQtNTBjNC00MTMzLTkwYjctNjc2ZDM1ZDQ5OWVkIiwidCI6IjhhNjJiMDNjLWZlMGItNGY5YS04Y2VkLWQwYjAxOGI5YmM3ZiIsImMiOjR9">
+  </iframe>
+</div>
 
 </body>
 </html>
-
 
 
 
