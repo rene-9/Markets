@@ -29,7 +29,7 @@
       width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;
       background:#0f1629;color:var(--fg);border:1px solid #2a3557;outline:none
     }
-    .note-card textarea{min-height:120px;resize:vertical}
+    .note-card textarea{min-height:120px;resize:none;box-sizing: border-box;overflow: hidden}
     .note-card .full{grid-column:1 / -1}
     .note-card .row{display:flex;gap:12px;align-items:center}
     .note-card .muted{color:var(--muted);font-size:12px}
@@ -82,11 +82,58 @@
     box-shadow: none;
     }
 
-    .grid-2 { display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start; }
+    .grid-2 { display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start; padding-top: 220px; }
 
     .card .header{ padding:10px 12px; font:600 14px/1.2 system-ui; color:#cfd7ff; border-bottom: none; }
     .card .body{ height:560px; }            /* explicit height so widgets render */
     @media (max-width:1024px){ .grid-2{ grid-template-columns:1fr; } .card .body{ height:520px; } }
+
+        /*Tab Styling */
+    .asset-tabs {
+      display: inline-flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .asset-tab {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid #1f2937; /* subtle border */
+      background: rgba(15, 23, 42, 0.9); /* dark navy */
+      color: #e5e7eb;
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s;
+    }
+
+    .asset-tab:hover {
+      border-color: #3b82f6;          /* soft blue edge on hover */
+      background: rgba(15, 23, 42, 1);
+    }
+
+    .asset-tab:active {
+      transform: translateY(1px);
+    }
+
+    .asset-tab.active {
+      border-color: #3b82f6;
+      background: rgba(37, 99, 235, 0.18); /* very light blue glow */
+    }
+
+    .top-bar {
+    position: fixed;
+    width: 1100px;
+    top: 0;
+
+
+    z-index: 150;
+    background: #0a0f1f;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
 
   </style>
 </head>
@@ -94,35 +141,38 @@
 
   
 <body>
+
+  
   <div class="wrap">
-    <!-- TradingView: symbol info -->
-    <div class="card" style="margin-top:16px">
-      <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright">
-          <a href="https://www.tradingview.com/symbols/OANDA-XAUUSD/" rel="noopener nofollow" target="_blank">
-            <span class="blue-text"></span>
-          </a><span class="trademark"></span>
+
+    <div class="top-bar">
+      <!-- tabs -->
+        <div class="asset-tabs">
+          <button class="asset-tab active" data-asset="gold">
+            Gold
+          </button>
+          <button class="asset-tab" data-asset="spy">
+            SPY
+          </button>
         </div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-        {
-          "symbol": "OANDA:XAUUSD",
-          "colorTheme": "dark",
-          "isTransparent": true,
-          "locale": "en",
-          "width": "100%"
-        }
-        </script>
+
+      <!-- TradingView: symbol info -->
+      <div class="card" style="margin-top:16px">
+        <div id="symbol-info-container" class="tradingview-widget-container"></div>
       </div>
+
     </div>
 
-    <div class="grid-2">
 
+    <div class="grid-2">
+      
       <!-- Left: World -->
       <div class="card">
         <div class="body">
           <div class="tradingview-widget-container" style="height:100%">
             <div class="tradingview-widget-container__widget" style="height:100%"></div>
+
+
             <div class="tradingview-widget-copyright">
               <a href="https://www.tradingview.com/markets/" target="_blank" rel="noopener nofollow">
                 <span class="blue-text">World markets</span></a> 
@@ -154,23 +204,11 @@
 
       <!-- RIGHT: ADVANCED CHART -->
       <div class="card">
-
+          <script src= "https://s3.tradingview.com/tv.js" > </script>
            <div id="pane-gold" class="tabpane" role="tabpanel" aria-labelledby="tab-gold">
             <div class="tradingview-widget-container" style="height:100%">
-              <div class="tradingview-widget-container__widget" style="height:100%"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-              {
-                "autosize": true,
-                "theme": "dark",
-                "symbol": "OANDA:XAUUSD",
-                "interval": "W",
-                "style": "1",
-                "allow_symbol_change": true,
-                "withdateranges": true,
-                "backgroundColor": "#0F0F0F"
-                
-              }
-              </script>
+              <div id="tv-main-chart" style="height:100%"></div>
+
             </div>
 
           </div>
@@ -188,21 +226,11 @@
       <!-- NEWS -->
       <div class="card" style="margin-top:16px">
         <div class="widget news">
-          <div class="tradingview-widget-container" style="height:500px">
-            <div class="tradingview-widget-container__widget" style="height:100%"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-            {
-              "feedMode": "symbol",
-              "symbol": "OANDA:XAUUSD",
-              "colorTheme": "dark",
-              "isTransparent": true,
-              "displayMode": "adaptive",
-              "width": "100%",
-              "height": "500",
-              "locale": "en"
-            }
-            </script>
-          </div>
+
+        <div id="news-container" class="tradingview-widget-container" style="height:500px">
+        <!-- News widget will be injected here by JS -->
+        </div>
+
         </div>
 
       </div>
@@ -232,6 +260,7 @@
       <div id="notion-journal" class="card" style="margin-top:24px;">
         
         <iframe 
+          id="journal-frame"
           src="https://superior-kangaroo.super.site/gold"
           style="
             width:100%;
@@ -249,7 +278,7 @@
 
     <!-- TRADE PLAN -->
       <div class="card">
-        <h2>Trade Plan / Notes</h2>
+        <h2>Market Playbook </h2>
         <div class="note-card" style="padding:14px 16px">
           <div class="grid">
             <div class="full">
@@ -284,11 +313,11 @@
             </div>
 
             <div class="full">
-              <label for="fundamental">Fundamental</label>
+              <label for="fundamental">Fundamental Views</label>
               <textarea id="fundamental" placeholder="key data, catalyst, events"></textarea>
             </div>
             <div class="full">
-              <label for="notes">Notes</label>
+              <label for="notes">Trading Notes</label>
               <textarea id="notes" placeholder="plan details, risk, scenarios…"></textarea>
             </div>
 
@@ -304,12 +333,19 @@
           </div>
         </div>
       </div>
+      
 
-
-
+      
   </div>
 
     <script>
+
+      // Change to mobile by small size detection
+      if (localStorage.getItem('forceDesktop') !== '1' &&
+          window.matchMedia('(max-width: 560px)').matches) {
+        location.href = './m/';  /* use ./m/ for project pages */
+      }
+
       // === Configuration ===
       // Change this if you switch symbol so each symbol keeps its own notes
       const NOTES_KEY = 'notes_XAUUSD';
@@ -630,23 +666,191 @@
     setInterval(draw, 30000);
     window.addEventListener('resize', draw);
   })();
-  </script>
-  <script>
-    if (localStorage.getItem('forceDesktop') !== '1' &&
-        window.matchMedia('(max-width: 560px)').matches) {
-      location.href = './m/';  /* use ./m/ for project pages */
+  
+  // Active tab selector logic
+
+
+    //Define Parameters as dictionaries (Key, )
+    const ASSETS = {
+    gold: {
+      symbol: "OANDA:XAUUSD",
+      title: "GOLD SPOT / U.S. DOLLAR",
+      subtitle: "XAUUSD · OANDA",
+      newsTag: "gold",
+      notionUrl: "https://superior-kangaroo.super.site/gold"
+    },
+    spy: {
+      symbol: "FOREXCOM:SPXUSD",
+      title: "S&P 500 INDEX",
+      subtitle: "67uknm-{S&P 500",
+      newsTag: "spx",
+      notionUrl: "https://superior-kangaroo.super.site/spx"
     }
+    };
+
+    let activeAsset = "gold";
+    let tvMainWidget = null;
+
+    function loadMainChart(symbol) {
+
+      const container = document.getElementById("tv-main-chart");
+      // remove previous iframe if any
+      container.innerHTML = "";
+
+      tvMainWidget = new TradingView.widget({
+      "container_id": "tv-main-chart",
+      "symbol": symbol,
+      "autosize": true,
+      "theme": "dark",
+      "interval": "W",
+      "style": "1",
+      "withdateranges": true,
+      "allow_symbol_change": true,
+      "backgroundColor": "#0F0F0F"
+
+    });
+    }
+
+    function loadSymbolInfo(symbol) {
+      const container = document.getElementById("symbol-info-container");
+      if (!container) {
+        console.error("symbol-info-container not found");
+        return;
+      }
+
+      // Clear previous widget
+      container.innerHTML = "";
+
+      // Create a new script to embed the widget
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js";
+      script.async = true;
+
+      // Widget configuration
+      script.innerHTML = JSON.stringify({
+        symbol: symbol,
+        colorTheme: "dark",
+        isTransparent: true,
+        locale: "en",
+        width: "100%",
+        height: 100
+      });
+
+      container.appendChild(script);
+    }
+
+    function loadNews(symbol) {
+      const container = document.getElementById("news-container");
+      if (!container) {
+        console.error("news-container not found");
+        return;
+      }
+
+      // Clear previous widget
+      container.innerHTML = "";
+
+      // Create a new script to embed the timeline widget
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-timeline.js";
+      script.async = true;
+
+      // Widget configuration
+      script.innerHTML = JSON.stringify({
+        feedMode: "symbol",
+        symbol: symbol,          // e.g. "OANDA:XAUUSD" or "AMEX:SPY"
+        colorTheme: "dark",
+        isTransparent: true,
+        displayMode: "adaptive",
+        width: "100%",
+        height: 500,
+        locale: "en"
+      });
+
+      container.appendChild(script);
+    }
+
+    function loadJournal(url) {
+      const frame = document.getElementById("journal-frame");
+      if (!frame) return; // Wait till is charged
+      frame.src = url; 
+    }
+
+
+
+    // Run once DOM is ready so #tv-main-chart exists
+    document.addEventListener('DOMContentLoaded', ()=> {
+
+      //Initial load: Gold
+      const initialSymbol = ASSETS[activeAsset].symbol || "OANDA:XAUUSD";
+      loadMainChart(initialSymbol);
+      loadSymbolInfo(initialSymbol);
+      loadNews(initialSymbol);
+
+      const initialNotionUrl = ASSETS[activeAsset].notionUrl;
+      if (initialNotionUrl) loadJournal(initialNotionUrl);
+
+      
+
+      // Tab selector logic
+      document.querySelectorAll('.asset-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const current = document.querySelector('.asset-tab.active');
+          if (current) current.classList.remove('active');
+          tab.classList.add('active');
+
+          // Index symbols → send SPY
+          function resolveNewsSymbol(symbol) {
+            if (symbol.includes("SPX")) return "SP:SPX";
+            if (symbol.includes("XAU")) return "OANDA:XAUUSD";
+            return symbol
+          } 
+
+          const key = tab.dataset.asset;   // e.g. "gold" or "spy"
+          if (ASSETS[key]) { //exist condition 
+            activeAsset = key;
+            const symbol = ASSETS[key].symbol;
+            const notionUrl = ASSETS[key].notionUrl;
+            
+            loadMainChart(symbol);
+            loadSymbolInfo(symbol);
+            loadNews(resolveNewsSymbol(symbol));
+            loadJournal(notionUrl);
+          }
+        });
+      });
+
+    });
+
+  // Auto resize 
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const areas = document.querySelectorAll('.note-card textarea');
+
+    const autoResize = (el) => {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    };
+
+    areas.forEach(area => {
+      area.addEventListener('input', () => autoResize(area));
+      autoResize(area);   // <-- initial resize for existing text
+    });
+  });
+
+    
   </script>
+
 
 </body>
 </html>
 
 
 
-
-
     
  
+
 
 
 
