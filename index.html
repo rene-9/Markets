@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
 
   <title>MarketWatch</title>
+
   <style>
     :root { --bg:#0b1220; --card:#0f1629; --fg:#e6edf3; --muted:#a8b3cf; --ok:#3fb950; --warn:#d29922; }
     html,body{margin:0;background:#0b1220;color:transparent;font-family:system-ui,Segoe UI,Roboto,Ubuntu,sans-serif}
@@ -154,6 +155,10 @@
           <button class="asset-tab" data-asset="spy">
             SPY
           </button>
+          <button class="asset-tab" data-asset="oil">
+            Oil
+          </button>
+
         </div>
 
       <!-- TradingView: symbol info -->
@@ -169,15 +174,20 @@
       <!-- Left: World -->
       <div class="card">
         <div class="body">
-          <div class="tradingview-widget-container" style="height:100%">
-            <div class="tradingview-widget-container__widget" style="height:100%"></div>
 
+          <div id= "genchart-container" class="tradingview-widget-container" style="height:100%">
+            <div class="tradingview-widget-container__widget" style="height:100%"></div>
 
             <div class="tradingview-widget-copyright">
               <a href="https://www.tradingview.com/markets/" target="_blank" rel="noopener nofollow">
                 <span class="blue-text">World markets</span></a> 
+          
             </div>
+
+            
+
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+
             {
               "colorTheme": "dark",
               "dateRange": "12M",
@@ -685,7 +695,17 @@
       subtitle: "67uknm-{S&P 500",
       newsTag: "spx",
       notionUrl: "https://superior-kangaroo.super.site/spx"
+    },
+
+    oil: {
+      symbol: "TVC:USOIL",
+      title: "WTI CRUDE OIL",
+      subtitle: "USOIL · TVC",
+      newsTag: "oil",
+      notionUrl: "https://superior-kangaroo.super.site/spx"
     }
+
+
     };
 
     let activeAsset = "gold";
@@ -740,6 +760,71 @@
       container.appendChild(script);
     }
 
+    function loadgenchart(symbol) {
+
+      //Symbol Selector and Ordenator
+      const BaseSymbols = [
+        { s: "OANDA:XAUUSD", d: "Gold" },
+        { s: "FOREXCOM:SPXUSD", d: "S&P 500" },
+        { s: "PYTH:US10Y", d: "US 10Y" },
+        { s: "CAPITALCOM:DXY", d: "DXY" },
+        { s: "BITSTAMP:BTCUSD", d: "Bitcoin" }
+      ];
+
+      const symbols = [...BaseSymbols];
+
+      const index = symbols.findIndex(
+        item => item.s === symbol
+      );
+
+      const selected = 
+        index >=0 
+          ? symbols.splice(index,1)[0]
+          : {s: symbol, d: symbol};
+
+      if (index === -1)
+        symbols.pop();
+      
+      symbols.unshift(selected);
+
+      //Cleaner
+      const container = document.getElementById("genchart-container");
+      if (!container) {
+        console.error("symbol-info-container not found");
+        return;
+      }
+
+      container.innerHTML = "";
+
+      // Create a new script 
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js";
+      script.async = true;
+
+      //Widget configuration
+      script.textContent = JSON.stringify({
+        colorTheme: "dark",
+        dateRange: "12M",
+        isTransparent: true,
+        showChart: true,
+        showSymbolLogo: true,
+        locale: "en",
+        width: "100%",
+        height: "100%",
+        tabs: [
+          {
+            title: "World markets",
+            symbols: symbols
+          }
+        ]
+      });
+
+      container.appendChild(script);
+    }
+
+      
+
     function loadNews(symbol) {
       const container = document.getElementById("news-container");
       if (!container) {
@@ -792,7 +877,6 @@
       if (initialNotionUrl) loadJournal(initialNotionUrl);
 
       
-
       // Tab selector logic
       document.querySelectorAll('.asset-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -814,9 +898,11 @@
             const notionUrl = ASSETS[key].notionUrl;
             
             loadMainChart(symbol);
+            loadgenchart(symbol);
             loadSymbolInfo(symbol);
             loadNews(resolveNewsSymbol(symbol));
             loadJournal(notionUrl);
+
           }
         });
       });
@@ -845,7 +931,6 @@
 
 </body>
 </html>
-
 
 
     
